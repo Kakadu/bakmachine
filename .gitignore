@@ -1,9 +1,10 @@
+_build
+*~
+*.byte
+*.native
 *.annot
-*.cmo
-*.cma
-*.cmi
-*.a
-*.o
+*.cm[oia]
+*.[ao]
 *.cmx
-*.cmxs
-*.cmxa
+*.cmx[sa]
+setup.log

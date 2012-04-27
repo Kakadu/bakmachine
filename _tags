@@ -1,0 +1,59 @@
+# OASIS_START
+# DO NOT EDIT (digest: 2bcb7d6d61ac62117cee0b73d4d59506)
+# Ignore VCS directories, you can use the same kind of rule outside 
+# OASIS_START/STOP if you want to exclude directories that contains 
+# useless stuff for the build process
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Library BakCore
+"src/BakCore.cmxs": use_BakCore
+<src/BakCore.{cma,cmxa}>: oasis_library_bakcore_byte
+<src/*.ml{,i}>: oasis_library_bakcore_byte
+<src/BakCore.{cma,cmxa}>: oasis_library_bakcore_native
+<src/*.ml{,i}>: oasis_library_bakcore_native
+<src/*.ml{,i}>: pkg_str
+<src/*.ml{,i}>: pkg_sexplib.syntax
+<src/*.ml{,i}>: pkg_sexplib
+<src/*.ml{,i}>: pkg_findlib
+# Executable BakTranslator
+"translator/translator.byte": oasis_executable_baktranslator_byte
+<translator/*.ml{,i}>: oasis_executable_baktranslator_byte
+"translator/translator.byte": oasis_executable_baktranslator_native
+<translator/*.ml{,i}>: oasis_executable_baktranslator_native
+"translator/translator.byte": use_BakCore
+"translator/translator.byte": pkg_str
+"translator/translator.byte": pkg_sexplib.syntax
+"translator/translator.byte": pkg_sexplib
+"translator/translator.byte": pkg_findlib
+<translator/*.ml{,i}>: use_BakCore
+<translator/*.ml{,i}>: pkg_str
+<translator/*.ml{,i}>: pkg_sexplib.syntax
+<translator/*.ml{,i}>: pkg_sexplib
+<translator/*.ml{,i}>: pkg_findlib
+# Executable BakInterpret
+"interpret/interpret.byte": oasis_executable_bakinterpret_byte
+<interpret/*.ml{,i}>: oasis_executable_bakinterpret_byte
+"interpret/interpret.byte": oasis_executable_bakinterpret_native
+<interpret/*.ml{,i}>: oasis_executable_bakinterpret_native
+"interpret/interpret.byte": use_BakCore
+"interpret/interpret.byte": pkg_str
+"interpret/interpret.byte": pkg_sexplib.syntax
+"interpret/interpret.byte": pkg_sexplib
+"interpret/interpret.byte": pkg_findlib
+<interpret/*.ml{,i}>: use_BakCore
+<interpret/*.ml{,i}>: pkg_str
+<interpret/*.ml{,i}>: pkg_sexplib.syntax
+<interpret/*.ml{,i}>: pkg_sexplib
+<interpret/*.ml{,i}>: pkg_findlib
+# OASIS_STOP
+"src/types.ml": syntax_camlp4o, syntax_sexplib.syntax
+"translator/comb.ml":  syntax_camlp4o, syntax_sexplib.syntax
+

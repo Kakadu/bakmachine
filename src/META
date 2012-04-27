@@ -1,0 +1,10 @@
+# OASIS_START
+# DO NOT EDIT (digest: cc54e65cfbd248c0f14d56314189f742)
+version = "0.2"
+description = "WTF"
+requires = "str findlib sexplib sexplib.syntax"
+archive(byte) = "BakCore.cma"
+archive(native) = "BakCore.cmxa"
+exists_if = "BakCore.cma"
+# OASIS_STOP
+

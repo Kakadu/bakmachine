@@ -1,0 +1,36 @@
+OASISFormat: 0.2
+Name:        BAKs language
+Version:     0.2
+OCamlVersion: >= 3.12
+Synopsis:    WTF
+Authors:     Kakadu
+License:     MIT
+Plugins:     META (0.2), StdFiles (0.2), DevFiles (0.2)
+XStdFilesREADME:  false
+XStdFilesAUTHORS: false
+
+BuildTools: ocamlbuild
+
+Library BakCore
+  Path:       src
+  Modules:    BakCore,Types
+  BuildDepends: str,findlib,sexplib,sexplib.syntax
+#  InternalModules: Types
+  NativeOpt:  -w @a -w -4
+  ByteOpt:    -w @a -w -4
+
+Executable BakInterpret
+  Path:       interpret
+  MainIs:     interpret.ml
+  BuildDepends: str,findlib,BakCore
+  NativeOpt:  -w @a -w -4
+  ByteOpt:    -w @a -w -4
+
+Executable BakTranslator
+  Path:       translator
+  MainIs:     translator.ml
+  BuildDepends: str,findlib,BakCore,sexplib.syntax
+  NativeOpt:  -w @a -w -4
+  ByteOpt:    -w @a -w -4
+
+
