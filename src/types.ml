@@ -11,8 +11,10 @@ type interrupt =
 with sexp
 type bytecmd =
   | Mov1 of regI * regI (* move register to register *)
+  | Mov2 of int  * regI (* move integer to register *)
   | Add1 of regI * regI
   | Sub1 of regI * regI
+(*  | Label of string *)
   | Int of interrupt
 with sexp
 
@@ -31,6 +33,7 @@ let print_bytecmd ch line =
       | Int IOutInt -> "intterrupt output AH"
       | Int IInputInt -> "interrupt input to AH"
       | Mov1 (a,b) -> sprintf "mov %s,%s" (sreg a) (sreg b)
+      | Mov2 (x,r) -> sprintf "mov %d,%s" x        (sreg r)
       | Add1 (a,b) -> sprintf "add %s,%s" (sreg a) (sreg b)
       | Sub1 (a,b) -> sprintf "sub %s,%s" (sreg a) (sreg b)
 (*      | _ -> 
@@ -81,7 +84,14 @@ let regI_of_code c =
   try Some (regI_of_code_exn c)
   with BadCode _ -> None
  
-
+module Option = struct
+  type 'a monad = 'a option
+  let return x = Some x
+  let bind f x = match x with
+    | Some x -> Some (f x)
+    | None   -> None
+  let (>>=) x f = bind f x
+end
 
 
 

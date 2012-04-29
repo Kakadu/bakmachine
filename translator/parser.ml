@@ -35,7 +35,8 @@ let sexp_of_pres = sexp_of_parse_result sexp_of_char
 let lines =
   let mov' = 
     pmov >>. p_space >>. (
-      pair pregister pregister >>= (fun (l,r) s -> Parsed(Mov1(l,r),s) )
+      (pair pregister pregister >>= (fun (l,r) s -> Parsed(Mov1(l,r),s) )) <|>
+      (pair p_uinteger  pregister >>= (fun (l,r) s -> Parsed(Mov2(l,r),s) )) 
     ) in
   let sub' = 
     psub >>. p_space >>. (

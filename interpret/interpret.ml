@@ -2,39 +2,42 @@
 open Types
 open Printf
 
+
 let parse = 
   let pos = ref 0 in
   let incr2 () = pos := 2 + !pos in
   let incr3 () = pos := 3 + !pos in
-  let wrap2regs l r onOK = 
-    match (regI_of_code l,regI_of_code r) with
-      | Some l,Some r -> onOK l r
-      | _ -> 
-          try
-            let _ = regI_of_code_exn l
-            and _ = regI_of_code_exn r in
-            assert false
+  let wrap_reg r =
+    match regI_of_code r with
+      | Some r -> r
+      | None ->
+          try let _ = regI_of_code_exn r in assert false
           with BadCode (c,str) -> 
             fprintf stderr "Error parsing bytecode %d at position %d: \"%s\"" c !pos str;
-            exit 0                
+            exit 0
   in
+  let wrap2regs l r onOK = onOK (wrap_reg l) (wrap_reg r) in
   let rec loop acc lst = 
     match lst with 
+      | 1 :: x :: r :: tl -> (* move integer to a register *)
+          let r = wrap_reg r in
+          incr3 ();
+          loop (Mov2(x,r) :: acc) tl
       | 7 :: l :: r :: tl -> (* move register to a register *)
-        wrap2regs l r (fun l r -> 
-              incr3 ();
-              loop ( (Mov1 (l,r)) :: acc) tl 
-        )
+          wrap2regs l r (fun l r -> 
+            incr3 ();
+            loop ( (Mov1 (l,r)) :: acc) tl 
+          )
       | 23 :: l :: r :: tl -> (* add l to r*)
-        wrap2regs l r (fun l r -> 
-          incr3 ();
-          loop ( (Add1 (l,r)) :: acc) tl 
-        )
+          wrap2regs l r (fun l r ->
+            incr3 ();
+            loop ( (Add1 (l,r)) :: acc) tl
+          )
       | 27 :: l :: r :: tl -> (* substract l from r *)
-        wrap2regs l r (fun l r -> 
-          incr3 ();
-          loop ( (Sub1 (l,r)) :: acc) tl 
-        )
+          wrap2regs l r (fun l r ->
+            incr3 ();
+            loop ( (Sub1 (l,r)) :: acc) tl
+          )
       |  20 :: icode :: tl -> begin (* interrupt *)
         match interr_of_code icode with
           | None -> begin
@@ -79,6 +82,8 @@ let interpret bytecodes =
   let exec x = match x with
     | Mov1 (l,r) -> (* move from register l ro register r *)
         let x = val_of_regI l in
+        put_reg r x
+    | Mov2 (x,r) ->  (* put integer to a register *)
         put_reg r x
     | Add1 (l,r) -> (* add register l to register r*) 
         let x = val_of_regI l and y = val_of_regI r in
