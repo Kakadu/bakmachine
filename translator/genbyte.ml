@@ -10,6 +10,8 @@ let generate codes =
     | Add1 (l,r) -> add 23; add (code_of_regI l); add (code_of_regI r)
     | Sub1 (l,r) -> add 27; add (code_of_regI l); add (code_of_regI r)
     | Int x      -> add 20; add (code_of_interr x)
+    | Cmp1 (x,r) -> add 50; add x;  add (code_of_regI r)
+    | Cmp2 (l,r) -> add 51; add (code_of_regI l); add (code_of_regI r)
   in
   List.iter f codes;
   List.rev !ans

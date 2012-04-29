@@ -38,7 +38,13 @@ let parse =
             incr3 ();
             loop ( (Sub1 (l,r)) :: acc) tl
           )
-      |  20 :: icode :: tl -> begin (* interrupt *)
+      | 50 :: x :: r :: tl -> (* compare integer and register *)
+          let r = wrap_reg r in
+          incr3 (); loop ( (Cmp1 (x,r)) :: acc ) tl
+      | 51 :: l :: r :: tl -> (* comapre two registers *)
+          let l,r = wrap_reg l,wrap_reg r in
+          incr3(); loop ( (Cmp2 (l,r)) :: acc ) tl
+      | 20 :: icode :: tl -> begin (* interrupt *)
         match interr_of_code icode with
           | None -> begin
             try ignore (interr_of_code_exn icode); assert false
@@ -51,7 +57,7 @@ let parse =
       | [] -> List.rev acc
       | _ -> begin
         fprintf stderr "Error while interpreting codes. Parsed part:\n";
-        List.iter (print_bytecmd stdout) (List.rev acc);
+        List.iter (print_bytecmd stderr) (List.rev acc);
         fprintf stderr "\nTail is:\n";
         List.iter (fprintf stderr "%d ") lst;
         exit 0        
@@ -62,21 +68,24 @@ let parse =
 type env = {
   mutable ah : int;
   mutable bh : int;
+  mutable eh : int;
 }
 let print_env env = 
-  printf "AH=%d\t BH=%d\n" env.ah env.bh
+  printf "AH=%d\t BH=%d EH=%d\n" env.ah env.bh env.eh
 
 exception End_of_execution
 let interpret bytecodes = 
   let program = parse bytecodes in
-  let env = { ah=0; bh=0 } in
+  let env = { ah=0; bh=0; eh=0 } in
   let val_of_regI = function
     | AH -> env.ah
     | BH -> env.bh
+    | EH -> env.eh
   in
   let put_reg r x = match r with
     | AH -> env.ah <- x
     | BH -> env.bh <- x
+    | EH -> env.eh <- x
   in
   
   let exec x = match x with
@@ -91,6 +100,12 @@ let interpret bytecodes =
     | Sub1 (l,r) -> (* substract register l from register r *) 
         let x = val_of_regI l and y = val_of_regI r in
         put_reg r (y-x)
+    | Cmp1 (x,r) -> 
+        let r = val_of_regI r in
+        put_reg EH (compare x r)
+    | Cmp2 (l,r) ->
+        let (l,r) = val_of_regI l, val_of_regI r in
+        put_reg EH (compare l r)
     | Int IExit -> ()
     | Int IOutInt -> (* print AH *)
         printf "%d\n" env.ah
@@ -100,7 +115,7 @@ let interpret bytecodes =
   let () = 
     try 
       List.iter  exec program;
-      printf "interpreting finished"
+      printf "interpreting finished\n"
     with End_of_execution -> printf "Fatal error while execution\n"
   in 
   print_env env

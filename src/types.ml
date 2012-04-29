@@ -1,6 +1,6 @@
 open Sexplib.Conv
 
-type regI = AH | BH (*|EAX | BP | SP*) 
+type regI = AH | BH | EH (*|EAX | BP | SP*) 
 with sexp
 (** integer registers *)
 (*type ram = Addr of int with sexp    *)
@@ -14,6 +14,8 @@ type bytecmd =
   | Mov2 of int  * regI (* move integer to register *)
   | Add1 of regI * regI
   | Sub1 of regI * regI
+  | Cmp1 of int  * regI (* compare left operand with right *)
+  | Cmp2 of regI * regI (* puts -1/0/1 to EH if left is less/eq/more than right *)
 (*  | Label of string *)
   | Int of interrupt
 with sexp
@@ -36,10 +38,9 @@ let print_bytecmd ch line =
       | Mov2 (x,r) -> sprintf "mov %d,%s" x        (sreg r)
       | Add1 (a,b) -> sprintf "add %s,%s" (sreg a) (sreg b)
       | Sub1 (a,b) -> sprintf "sub %s,%s" (sreg a) (sreg b)
-(*      | _ -> 
-          flush stdout;
-          assert false *)
-    )
+      | Cmp1 (x,r) -> sprintf "cmp %d,%s" x        (sreg r)
+      | Cmp2 (a,b) -> sprintf "cmp %s,%s" (sreg a) (sreg b)
+  )
 
 let print_prog ch lst =  
   List.iter (print_bytecmd ch) lst
@@ -68,12 +69,14 @@ let interr_of_code code =
 let code_of_regI = function
   | AH -> 0
   | BH -> 1
+  | EH -> 4
 
 let regI_of_code_exn c = 
   try 
     let ans = match c with
       | 0 -> AH
       | 1 -> BH 
+      | 4 -> EH
       | _ -> raise (BadCode (c,"while trying to parse register"))
     in
     assert (c = code_of_regI ans);
