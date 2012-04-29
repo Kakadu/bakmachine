@@ -1,5 +1,6 @@
 open Comb
-open Types
+(* open Types *)
+open SimpleAsm
 open Sexplib.Conv 
 open Printf
 
@@ -16,24 +17,41 @@ let padd = pstring "add"
 let pint = pstring "int"
 
 let pregister =
-  printf "inside pregister: \n"; 
+  let open Types in
   let h s r = pstring s >>= (fun _ s -> Parsed(r,s)) in 
   (
    ( (*
     h "eax" EAX <|>
     h "bp" BP <|>  
     h "sp" SP <|>  *)
-    h "eh" EH <|> 
     h "ah" AH <|> 
-    h "bh" BH)
-  ) >>= (fun r s -> 
-(*    printf "pregister says %s\n" (r |> sexp_of_regI |> string_of_sexp); *)
-    Parsed (r,s)
-  )
+    h "bh" BH <|>
+    h "ch" CH <|>
+    h "dh" DH <|>
+    h "eh" EH 
+   ) 
+  ) >>= (fun r s -> Parsed (r,s) )
 
 let sexp_of_pres = sexp_of_parse_result sexp_of_char 
+let p_label stream =
+  let module B=Buffer in
+  let b = B.create 10 in
+  let good_char c = (c>='a' && c<='z') || (c>='0' && c<='9') in
+  let rec loop s = 
+    printf "contents: `%s`, length = %d\n" (B.contents b) (B.length b);
+    match s with
+    | x   :: tl when good_char x  -> B.add_char b x; loop tl
+    | ':' :: tl when B.length b>0 -> 
+        printf "label finised with `%s`. tails length = %d\n" (B.contents b) (List.length tl);
+        Parsed (B.contents b, tl)
+    | _ -> print_endline "loop says failed" ; Failed
+  in
+  loop stream
 
 let lines =
+  let label' = (p_label >>> p_space) >>= (fun s r -> 
+    print_endline "olololo";
+    Parsed(Label s,r) ) in
   let mov' = 
     pmov >>. p_space >>. (
       (pair pregister  pregister >>= (fun (l,r) s -> Parsed(Mov1(l,r),s) )) <|>
@@ -53,28 +71,18 @@ let lines =
       pair pregister pregister >>= (fun (l,r) s -> Parsed(Add1 (l,r),s) )
     ) in
   let inter' =
-    pint >>. p_space >>. p_uinteger >>= (fun r s -> 
+    (pstring "int") >>. p_space >>. p_uinteger >>= (fun r s -> 
       Printf.printf "here: %d\n" r;
-      match inter_of_int r with
+      match Types.inter_of_int r with
         | Some r ->  Parsed (Int r,s) 
         | None -> Failed
     )
   in
+  let cmds = mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> label' in
+(*  let cmds = (* mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> *) label' in *)
   p_manyf 
-    ((mov' <|> inter' <|> add' <|> sub' <|> cmp') >>> p_endline >>> p_space) 
-    (fun x y -> y::x) [] >>= (fun ans s -> Parsed (List.rev ans,s) )
-
-
-
-
-
-
-
-
-
-
-
-
+    (cmds >>> p_endline) 
+    (fun x y -> print_endline "new line parsed"; y::x) [] >>= (fun ans s -> Parsed (List.rev ans,s) )
 
 
 

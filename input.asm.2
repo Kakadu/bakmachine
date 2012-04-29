@@ -1,0 +1,11 @@
+mov 0,ah
+mov 5,bh
+mov 1,dh
+cmp ah,bh
+label1:
+add 1,ah
+mul ah,dh
+cmp ah,bh
+jl label1
+mov dh,ah
+int 10

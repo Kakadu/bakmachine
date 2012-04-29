@@ -68,23 +68,29 @@ let parse =
 type env = {
   mutable ah : int;
   mutable bh : int;
+  mutable ch : int;
+  mutable dh : int;
   mutable eh : int;
 }
 let print_env env = 
-  printf "AH=%d\t BH=%d EH=%d\n" env.ah env.bh env.eh
+  printf "AH=%d\t BH=%d CH=%d DH=%d EH=%d\n" env.ah env.bh env.ch env.dh env.eh
 
 exception End_of_execution
 let interpret bytecodes = 
   let program = parse bytecodes in
-  let env = { ah=0; bh=0; eh=0 } in
+  let env = { ah=0; bh=0; ch=0; dh=0; eh=0 } in
   let val_of_regI = function
     | AH -> env.ah
     | BH -> env.bh
+    | CH -> env.ch
+    | DH -> env.dh
     | EH -> env.eh
   in
   let put_reg r x = match r with
     | AH -> env.ah <- x
     | BH -> env.bh <- x
+    | CH -> env.ch <- x
+    | DH -> env.dh <- x
     | EH -> env.eh <- x
   in
   
@@ -109,7 +115,7 @@ let interpret bytecodes =
     | Int IExit -> ()
     | Int IOutInt -> (* print AH *)
         printf "%d\n" env.ah
-    | Int IInputInt  -> (* put integer to AH *)
+    | Int IInputInt -> (* put integer to AH *)
         Scanf.scanf "%d\n" (fun x -> env.ah <- x)
   in
   let () = 

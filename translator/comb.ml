@@ -6,12 +6,17 @@ type 'a parse_result =
   | Parsed of 'a * char list
   | Failed
 with sexp
+
 let p_pred p s = match s with 
   | [] -> Failed 
   | h::t -> if p h then Parsed(h, t) else Failed
 
 let p_char c = p_pred ((=) c) 
-let p_endline = p_char '\n'
+let p_endline = 
+  print_endline "inside p_endline"; 
+  flush stdout;
+  p_char '\n'
+
 let isdigit c = c>='0' && c<='9' 
 let p_digit = p_pred isdigit
 
@@ -39,8 +44,11 @@ let (>>.) a b s =
 let ( >>> ) p1 p2 s =
   match p1 s with
     | Parsed (ans,s2) -> begin
+      print_endline "left part >>> finished. go right"; flush stdout;
       match p2 s2 with
-        | Parsed (_,s3) -> Parsed (ans,s3)
+        | Parsed (_,s3) -> 
+            print_endline "right part of >>> ended succussfully"; flush stdout;
+            Parsed (ans,s3)
         | Failed -> Failed
     end
     | Failed -> Failed
@@ -74,18 +82,24 @@ let pstring s stream = (*
 
 let print_stream s = 
   print_char '`';
-  List.iter (print_char) s;
+  List.iter (fun c -> if c='\n' then print_string "\\n" else print_char c) s;
   print_endline "`"
 
 let p_manyf a f v0 = 
   let rec loop v s = 
-    printf "inside p_manyf.loop: %s\n" "";
+    printf "inside p_manyf.loop\n";
     print_stream s;
+    flush stdout;
     match a s with 
-      | Parsed(x, s') -> loop (f v x) s' 
+      | Parsed(x, s') -> 
+          printf "p_manyf's loop parsed smth\n";
+          loop (f v x) s' 
       | Failed -> 
-          printf "here =(\n";
-          Parsed(v, s) 
+          if v=v0 then (printf "pmany_f finished without a progress\n"; Parsed (v,s))
+          else (
+            printf "p_manyf ended with result.\n";
+            p_info 10 (fun s -> Parsed(v, s)) s
+          )
   in loop v0
 
 let p_space =

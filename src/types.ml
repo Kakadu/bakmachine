@@ -1,6 +1,7 @@
 open Sexplib.Conv
 
-type regI = AH | BH | EH (*|EAX | BP | SP*) 
+let (|>) x f = f x
+type regI = AH|BH|CH|DH|EH (*|EAX | BP | SP*) 
 with sexp
 (** integer registers *)
 (*type ram = Addr of int with sexp    *)
@@ -69,6 +70,8 @@ let interr_of_code code =
 let code_of_regI = function
   | AH -> 0
   | BH -> 1
+  | CH -> 2
+  | DH -> 3
   | EH -> 4
 
 let regI_of_code_exn c = 
@@ -76,6 +79,8 @@ let regI_of_code_exn c =
     let ans = match c with
       | 0 -> AH
       | 1 -> BH 
+      | 2 -> CH 
+      | 3 -> DH
       | 4 -> EH
       | _ -> raise (BadCode (c,"while trying to parse register"))
     in

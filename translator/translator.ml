@@ -15,9 +15,11 @@ let stream =
     List.rev !ans
 
 let code =
-  match Parser.lines stream with
-    | Comb.Parsed (lst,_) ->
-        Printf.printf  "parsed %d operations!\n" (List.length lst);
+  match ParserAsm.lines stream with
+    | Comb.Parsed (lst,tail) ->
+        Printf.printf  "parsed %d operations. Tail's length %d!\n" (List.length lst) (List.length tail);
+        let _ = Comb.p_info 10 (fun _ -> ()) tail in
+        print_endline "";
         lst
     | Comb.Failed -> 
         print_endline "parsing failed";
@@ -26,9 +28,9 @@ let code =
 open Sexplib.Conv
 
 let (|>) x f = f x
-let () = Types.print_prog stdout code
+let () = SimpleAsm.print_prog stdout code
 
-let bytecode = Genbyte.generate code
+let bytecode = CompileAsm.generate code
 let () = 
   print_endline "bytecode:";
   List.iter (printf "%d ") bytecode;
