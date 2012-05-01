@@ -16,7 +16,7 @@ let generate (codes: SimpleAsm.bytecmd list) : int list =
     List.fold_left (fun (acc,i) cmd -> match cmd with
       | Label s -> 
           (SM.add s i acc,i)
-      | _ -> (acc,i+1)
+      | _ -> (acc,i+ SimpleAsm.lengther cmd)
     ) (SM.empty,0) codes
   in
   let ans = ref [] in
@@ -26,11 +26,13 @@ let generate (codes: SimpleAsm.bytecmd list) : int list =
     | Mov1 (l,r) -> add 7;  add (cori l); add (cori r)
     | Mov2 (x,r) -> add 1;  add x;        add (cori r)
     | Add1 (l,r) -> add 23; add (cori l); add (cori r)
+    | Add2 (x,r) -> add 22; add x;        add (cori r)
+    | Mul1  l    -> add 31; add (cori l)
     | Sub1 (l,r) -> add 27; add (cori l); add (cori r)
     | Int x      -> add 20; add (Types.code_of_interr x)
     | Cmp1 (x,r) -> add 50; add x;  add (cori r)
     | Cmp2 (l,r) -> add 51; add (cori l); add (cori r)
-    | Jne s      -> begin
+    | JumpLess s -> begin
         try
           let target = SM.find s labels in
           add 48; add target

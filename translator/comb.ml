@@ -102,9 +102,13 @@ let p_manyf a f v0 =
           )
   in loop v0
 
-let p_space =
-  (p_manyf (p_char ' ' <|> p_char '\t' <|> p_char '\n') (fun l _ -> l) "") >>= (fun _ s -> Parsed((),s))
-
+let p_space stream =
+  let rec loop s = 
+    match s with
+      | (' ' | '\t') :: tl -> loop tl
+      | _ -> Parsed ((),s)
+  in
+  loop stream
 
 let mkInt v x = 
   let ans = v * 10 + int_of_char x - 48 in
@@ -114,6 +118,27 @@ let mkInt v x =
 let p_uinteger =
   p_manyf p_digit mkInt 0 >>= (fun r s -> printf "uinteger says %d\n" r; Parsed (r,s) )
   
+let manyCharsLike cond s =
+  let b = Buffer.create 10 in
+  let rec loop s = match s with
+    | x::tl when cond x -> Buffer.add_char b x; loop tl
+    | _  -> Parsed (Buffer.contents b, s)
+  in
+  loop s
+
+let min1manyCharsLike cond s = match s with
+  | head :: tl when cond head -> begin
+    let b = Buffer.create 10 in
+    Buffer.add_char b head;
+    let rec loop s = match s with
+      | x::tl when cond x -> Buffer.add_char b x; loop tl
+      | _  -> Parsed (Buffer.contents b, s)
+    in
+    loop tl
+  end
+  | _ -> Failed
+
+
 
 
 

@@ -14,12 +14,22 @@ type bytecmd =
   | Mov1 of regI * regI (* move register to register *)
   | Mov2 of int  * regI (* move integer to register *)
   | Add1 of regI * regI
+  | Add2 of int  * regI
+  | Mul1 of regI        (* multiple reg to AH and put to AH *)
   | Sub1 of regI * regI
+  | JumpLess of int
   | Cmp1 of int  * regI (* compare left operand with right *)
   | Cmp2 of regI * regI (* puts -1/0/1 to EH if left is less/eq/more than right *)
-(*  | Label of string *)
   | Int of interrupt
+  | Nop
 with sexp
+
+let instr_length = function
+  | Mov1 _ | Mov2 _ | Add1 _ | Add2 _ | Sub1 _ | Cmp1 _ 
+  | Cmp2 _ -> 3
+  | Int _ | JumpLess _ 
+  | Mul1 _ -> 2
+  | Nop  -> 1
 
 let inter_of_int = function
   | 10 -> Some IExit
@@ -38,9 +48,13 @@ let print_bytecmd ch line =
       | Mov1 (a,b) -> sprintf "mov %s,%s" (sreg a) (sreg b)
       | Mov2 (x,r) -> sprintf "mov %d,%s" x        (sreg r)
       | Add1 (a,b) -> sprintf "add %s,%s" (sreg a) (sreg b)
+      | Add2 (a,b) -> sprintf "add %d,%s" a        (sreg b)
+      | Mul1   r   -> sprintf "mul %s"    (sreg r)
+      | JumpLess x -> sprintf "jl %d" x
       | Sub1 (a,b) -> sprintf "sub %s,%s" (sreg a) (sreg b)
       | Cmp1 (x,r) -> sprintf "cmp %d,%s" x        (sreg r)
       | Cmp2 (a,b) -> sprintf "cmp %s,%s" (sreg a) (sreg b)
+      | Nop        -> "nop"
   )
 
 let print_prog ch lst =  

@@ -33,14 +33,14 @@ let pregister =
   ) >>= (fun r s -> Parsed (r,s) )
 
 let sexp_of_pres = sexp_of_parse_result sexp_of_char 
+let label_good_char c = (c>='a' && c<='z') || (c>='0' && c<='9')
 let p_label stream =
   let module B=Buffer in
   let b = B.create 10 in
-  let good_char c = (c>='a' && c<='z') || (c>='0' && c<='9') in
   let rec loop s = 
     printf "contents: `%s`, length = %d\n" (B.contents b) (B.length b);
     match s with
-    | x   :: tl when good_char x  -> B.add_char b x; loop tl
+    | x   :: tl when label_good_char x  -> B.add_char b x; loop tl
     | ':' :: tl when B.length b>0 -> 
         printf "label finised with `%s`. tails length = %d\n" (B.contents b) (List.length tl);
         Parsed (B.contents b, tl)
@@ -67,9 +67,18 @@ let lines =
       pair pregister pregister >>= (fun (l,r) s -> Parsed(Sub1(l,r),s) )
     ) in
   let add' = 
-    padd >>. p_space >>. (
-      pair pregister pregister >>= (fun (l,r) s -> Parsed(Add1 (l,r),s) )
+    (pstring "add") >>. p_space >>. (
+      (pair pregister  pregister >>= (fun (l,r) s -> Parsed(Add1 (l,r),s) )) <|>
+      (pair p_uinteger pregister >>= (fun (x,r) s -> Parsed(Add2 (x,r),s) ))
     ) in
+  let mul' = 
+    (pstring "mul") >>. p_space >>. (
+      pregister >>= (fun r s -> Parsed (Mul1 r,s) )
+    ) in 
+  let jl = 
+    (pstring "jl") >>. p_space >>. (
+      min1manyCharsLike label_good_char >>= (fun r s -> Parsed (JumpLess r,s))
+     ) in
   let inter' =
     (pstring "int") >>. p_space >>. p_uinteger >>= (fun r s -> 
       Printf.printf "here: %d\n" r;
@@ -78,8 +87,8 @@ let lines =
         | None -> Failed
     )
   in
-  let cmds = mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> label' in
-(*  let cmds = (* mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> *) label' in *)
+  let cmds = mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> mul' <|> jl <|> label' in
+
   p_manyf 
     (cmds >>> p_endline) 
     (fun x y -> print_endline "new line parsed"; y::x) [] >>= (fun ans s -> Parsed (List.rev ans,s) )
