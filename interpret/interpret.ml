@@ -81,21 +81,22 @@ type env = {
   mutable bh : int;
   mutable ch : int;
   mutable dh : int;
-  mutable eh : int;
+  mutable eh : int;  mutable sp : int;
 }
 let print_env env = 
-  printf "{AH=%d, BH=%d, CH=%d, DH=%d, EH=%d}\n" env.ah env.bh env.ch env.dh env.eh
+  printf "{AH=%d, BH=%d, CH=%d, DH=%d, EH=%d, SP=%d}\n" env.ah env.bh env.ch env.dh env.eh env.sp
 
 exception End_of_execution
 let interpret bytecodes = 
   let program = parse bytecodes in
-  let env = { ah=0; bh=0; ch=0; dh=0; eh=0 } in
+  let env = { ah=0; bh=0; ch=0; dh=0; eh=0; sp=0 } in
   let val_of_regI = function
     | AH -> env.ah
     | BH -> env.bh
     | CH -> env.ch
     | DH -> env.dh
     | EH -> env.eh
+    | SP -> env.sp
   in
   let put_reg r x = match r with
     | AH -> env.ah <- x
@@ -103,60 +104,69 @@ let interpret bytecodes =
     | CH -> env.ch <- x
     | DH -> env.dh <- x
     | EH -> env.eh <- x
+    | SP -> env.sp <- x
   in
-
-  let next_instr prev cmd = match cmd with
-    | JumpLess x -> x
-    | _  -> prev + (instr_length cmd) in
-
-  let exec x = match x with
-    | Nop        -> ()
+  let shift ~cmd = env.sp <- env.sp + (Types.instr_length cmd) in
+  let shift' x =   env.sp <- x in
+  let exec cmd = match cmd with
+    | Nop        -> shift' 1
     | Mov1 (l,r) -> (* move from register l ro register r *)
-        let x = val_of_regI l in
-        put_reg r x
+        put_reg r (val_of_regI l);
+        shift ~cmd
     | Mov2 (x,r) ->  (* put integer to a register *)
-        put_reg r x
+        put_reg r x;
+        shift ~cmd
     | Add1 (l,r) -> (* add register l to register r*) 
         let x = val_of_regI l and y = val_of_regI r in
-        put_reg r (x+y)
+        put_reg r (x+y);
+        shift ~cmd
     | Add2 (x,r) -> (* add integer to a register *)
         let y = val_of_regI r in
-        put_reg r (x+y)
+        put_reg r (x+y);
+        shift ~cmd
     | Mul1 r    -> (* muliply r to AH and put to AH *)
         let x = val_of_regI r and y = val_of_regI AH in
-        put_reg AH (x*y)
+        put_reg AH (x*y);
+        shift ~cmd
     | Sub1 (l,r) -> (* substract register l from register r *) 
         let x = val_of_regI l and y = val_of_regI r in
-        put_reg r (y-x)
-    | JumpLess _ -> ()
+        put_reg r (y-x);
+        shift ~cmd
+    | JumpLess addr -> 
+        shift' (if env.eh = -1 then addr else env.sp+(instr_length cmd))
     | Cmp1 (x,r) -> 
         let r = val_of_regI r in
         put_reg EH (compare x r)
     | Cmp2 (l,r) ->
-        let (l,r) = val_of_regI l, val_of_regI r in
-        put_reg EH (compare l r)
-    | Int IExit -> ()
+        let l = val_of_regI l and r = val_of_regI r in
+        put_reg EH (compare l r);
+        shift ~cmd
+    | Int IExit -> assert false
     | Int IOutInt -> (* print AH *)
-        printf "%d\n" env.ah
+        printf "%d\n" env.ah;
+        shift ~cmd
     | Int IInputInt -> (* put integer to AH *)
-        Scanf.scanf "%d\n" (fun x -> env.ah <- x)
+        Scanf.scanf "%d\n" (fun x -> env.ah <- x);
+        shift ~cmd
   in
-  let rec exec_loop pos =
-    match program.(pos) with
-      | None -> exec_loop (pos+1)
+  let rec exec_loop () =
+    let miss_sp () = 
+      printf "No command on this position %d\n" env.sp
+    in
+    if env.sp >= Array.length program then miss_sp ()
+    else match program.(env.sp) with
+      | None -> miss_sp ()
       | Some (Int IExit) -> ()
       | Some instr ->
-          print_env env;
-          printf "exec instruction at pos %d: " pos;
-          Types.print_bytecmd stdout instr;
           exec instr;
-          exec_loop (next_instr pos instr)
+          exec_loop ()
   in
   let () = 
+    env.sp <- 0;
     try 
       if Array.length program = 0
       then printf "Program is empty\n"
-      else exec_loop 0;
+      else exec_loop ();
       printf "Interpreting finished\n"
     with End_of_execution -> printf "Fatal error while execution\n"
   in 

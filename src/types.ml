@@ -1,7 +1,7 @@
 open Sexplib.Conv
 
 let (|>) x f = f x
-type regI = AH|BH|CH|DH|EH (*|EAX | BP | SP*) 
+type regI = AH|BH|CH|DH|EH|SP (*|EAX | BP*) 
 with sexp
 (** integer registers *)
 (*type ram = Addr of int with sexp    *)
@@ -63,14 +63,14 @@ let print_prog ch lst =
 exception BadCode of int * string
 let code_of_interr = function
   | IExit -> 10
-  | IInputInt ->  12
+  | IInputInt ->  13
   | IOutInt -> 11
 
 let interr_of_code_exn code = 
  try
    let ans = match code with
      | 10 -> IExit
-     | 12 -> IInputInt
+     | 13 -> IInputInt
      | 11 -> IOutInt
      | _ -> raise (BadCode (code, "error while parsing interrupt code"))
    in
@@ -87,6 +87,7 @@ let code_of_regI = function
   | CH -> 2
   | DH -> 3
   | EH -> 4
+  | SP -> 5
 
 let regI_of_code_exn c = 
   try 
@@ -96,6 +97,7 @@ let regI_of_code_exn c =
       | 2 -> CH 
       | 3 -> DH
       | 4 -> EH
+      | 5 -> SP
       | _ -> raise (BadCode (c,"while trying to parse register"))
     in
     assert (c = code_of_regI ans);
