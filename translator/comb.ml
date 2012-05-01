@@ -12,10 +12,7 @@ let p_pred p s = match s with
   | h::t -> if p h then Parsed(h, t) else Failed
 
 let p_char c = p_pred ((=) c) 
-let p_endline = 
-  print_endline "inside p_endline"; 
-  flush stdout;
-  p_char '\n'
+let p_endline = p_char '\n'
 
 let isdigit c = c>='0' && c<='9' 
 let p_digit = p_pred isdigit
@@ -30,9 +27,9 @@ let p_info n p s =
           loop (n-1) xs
       | _::_ ->  assert false
   in
-  printf "p_info says:\n`";
+  printf "p_info says: `";
   ignore (loop n s);
-  printf "`";
+  printf "`\n";
   flush stdout;
   p s
 
@@ -44,11 +41,8 @@ let (>>.) a b s =
 let ( >>> ) p1 p2 s =
   match p1 s with
     | Parsed (ans,s2) -> begin
-      print_endline "left part >>> finished. go right"; flush stdout;
       match p2 s2 with
-        | Parsed (_,s3) -> 
-            print_endline "right part of >>> ended succussfully"; flush stdout;
-            Parsed (ans,s3)
+        | Parsed (_,s3) -> Parsed (ans,s3)
         | Failed -> Failed
     end
     | Failed -> Failed
@@ -64,21 +58,19 @@ let (>>=) p1 f s =
     | Parsed(x, s2) -> f x s2 
     | Failed -> Failed
 
-let pstring s stream = (*
-  let ppp s stream =  *)
+let pstring s = 
+(*  let ppp s stream = *)
   let len = String.length s in
   let rec loop i stream =
-    if i=len then (
-(*      printf "p_string succesful for string `%s`\n" s; *)
-      Parsed (s,stream)  )
+    if i=len then Parsed (s,stream)
     else
     match p_char s.[i] stream with
       | Failed -> Failed
       | Parsed (_,s2) -> loop (i+1) s2
   in
-  loop 0 stream (*
+  loop 0 (* stream
  in
- p_info 10 (ppp s) stream *)
+p_info 10 (ppp s) stream *)
 
 let print_stream s = 
   print_char '`';
@@ -87,36 +79,28 @@ let print_stream s =
 
 let p_manyf a f v0 = 
   let rec loop v s = 
-    printf "inside p_manyf.loop\n";
-    print_stream s;
-    flush stdout;
     match a s with 
       | Parsed(x, s') -> 
-          printf "p_manyf's loop parsed smth\n";
-          loop (f v x) s' 
+          loop (f v x) s'
       | Failed -> 
-          if v=v0 then (printf "pmany_f finished without a progress\n"; Parsed (v,s))
-          else (
-            printf "p_manyf ended with result.\n";
-            p_info 10 (fun s -> Parsed(v, s)) s
-          )
-  in loop v0
+          if v=v0 then Parsed (v,s)
+          else p_info 10 (fun s -> Parsed(v, s)) s
+  in 
+  loop v0
 
-let p_space stream =
+let p_space =
   let rec loop s = 
     match s with
       | (' ' | '\t') :: tl -> loop tl
       | _ -> Parsed ((),s)
   in
-  loop stream
+  loop
 
 let mkInt v x = 
   let ans = v * 10 + int_of_char x - 48 in
   printf "mkInt of %d %c says %d\n" v x ans;
   ans
 
-let p_uinteger =
-  p_manyf p_digit mkInt 0 >>= (fun r s -> printf "uinteger says %d\n" r; Parsed (r,s) )
   
 let manyCharsLike cond s =
   let b = Buffer.create 10 in
@@ -125,6 +109,12 @@ let manyCharsLike cond s =
     | _  -> Parsed (Buffer.contents b, s)
   in
   loop s
+
+let p_uinteger =
+  manyCharsLike isdigit >>= (fun ans s -> 
+    try let r = int_of_string ans in
+        Parsed (r,s)
+    with Failure _ -> Failed)
 
 let min1manyCharsLike cond s = match s with
   | head :: tl when cond head -> begin
