@@ -47,7 +47,9 @@ let parse (ints: int list) =
           end
           | Some i -> Some (Int i, tl)
       end
-      | 48 :: x :: tl -> Some (JumpLess x,tl)
+      | 46 :: x :: tl -> Some (JumpLess x,tl)
+      | 42 :: x :: tl -> Some (JumpEq   x,tl)
+      | 44 :: x :: tl -> Some (JumpGre  x,tl)
       | _____________ -> None
   in
   let pos = ref 0 in
@@ -132,8 +134,12 @@ let interpret bytecodes =
         let x = val_of_regI l and y = val_of_regI r in
         put_reg r (y-x);
         shift ~cmd
-    | JumpLess addr -> 
+    | JumpLess addr ->
         shift' (if env.eh = -1 then addr else env.sp+(instr_length cmd))
+    | JumpEq   addr ->
+        shift' (if env.eh =  0 then addr else env.sp+(instr_length cmd))
+    | JumpGre  addr ->
+        shift' (if env.eh =  1 then addr else env.sp+(instr_length cmd))
     | Cmp1 (x,r) -> 
         let r = val_of_regI r in
         put_reg EH (compare x r)

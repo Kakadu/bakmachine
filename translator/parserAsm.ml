@@ -62,10 +62,15 @@ let lines =
     (pstring "mul") >>. p_space >>. (
       pregister >>= (fun r s -> Parsed (Mul1 r,s) )
     ) in 
-  let jl = 
-    (pstring "jl") >>. p_space >>. (
-      min1manyCharsLike label_good_char >>= (fun r s -> Parsed (JumpLess r,s))
-     ) in
+  let jumps =
+    let helper s constr = 
+      (pstring s) >>. p_space >>. min1manyCharsLike label_good_char 
+      >>= (fun r s -> Parsed (constr r,s))
+    in
+    (helper "jl" (fun x -> JumpLess x)) <|>
+    (helper "je" (fun x -> JumpEq   x)) <|>
+    (helper "jg" (fun x -> JumpGre  x)) 
+  in
   let inter' =
     (pstring "int") >>. p_space >>. p_uinteger >>= (fun r s -> 
       match Types.inter_of_int r with
@@ -73,7 +78,7 @@ let lines =
         | None   -> Failed
     )
   in
-  let cmds = mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> mul' <|> jl <|> label' in
+  let cmds = mov' <|> inter' <|> add' <|> sub' <|> cmp' <|> mul' <|> jumps <|> label' in
 
   p_manyf 
     (cmds >>> p_endline) 

@@ -17,7 +17,9 @@ type bytecmd =
   | Add2 of int  * regI
   | Mul1 of regI        (* multiple reg to AH and put to AH *)
   | Sub1 of regI * regI
-  | JumpLess of int
+  | JumpLess of int     (* Jump if EH =-1*)
+  | JumpEq   of int     (* 0 *)
+  | JumpGre  of int     (* 1 *)
   | Cmp1 of int  * regI (* compare left operand with right *)
   | Cmp2 of regI * regI (* puts -1/0/1 to EH if left is less/eq/more than right *)
   | Int of interrupt
@@ -27,7 +29,7 @@ with sexp
 let instr_length = function
   | Mov1 _ | Mov2 _ | Add1 _ | Add2 _ | Sub1 _ | Cmp1 _ 
   | Cmp2 _ -> 3
-  | Int _ | JumpLess _ 
+  | Int _ | JumpEq _ | JumpLess _ | JumpGre _
   | Mul1 _ -> 2
   | Nop  -> 1
 
@@ -51,6 +53,8 @@ let print_bytecmd ch line =
       | Add2 (a,b) -> sprintf "add %d,%s" a        (sreg b)
       | Mul1   r   -> sprintf "mul %s"    (sreg r)
       | JumpLess x -> sprintf "jl %d" x
+      | JumpEq   x -> sprintf "je %d" x
+      | JumpGre  x -> sprintf "jg %d" x
       | Sub1 (a,b) -> sprintf "sub %s,%s" (sreg a) (sreg b)
       | Cmp1 (x,r) -> sprintf "cmp %d,%s" x        (sreg r)
       | Cmp2 (a,b) -> sprintf "cmp %s,%s" (sreg a) (sreg b)

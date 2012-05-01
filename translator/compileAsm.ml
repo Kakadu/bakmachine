@@ -22,7 +22,20 @@ let generate (codes: SimpleAsm.bytecmd list) : int list =
   let ans = ref [] in
   let add x = ans := x :: !ans in
   let cori = Types.code_of_regI in
-  let f pos = function
+  let jumpHelper pos cmd =
+    let helper code s =
+      try let target = SM.find s labels in
+          add code; add target
+      with Not_found ->
+        raise (BytecodeGenError (pos, sprintf "Label `%s` not found" s))
+    in
+    match cmd with
+      | JumpLess s -> helper 46 s
+      | JumpEq   s -> helper 42 s
+      | JumpGre  s -> helper 44 s
+      | _ -> assert false
+  in
+  let f pos cmd = match cmd with
     | Mov1 (l,r) -> add 7;  add (cori l); add (cori r)
     | Mov2 (x,r) -> add 1;  add x;        add (cori r)
     | Add1 (l,r) -> add 23; add (cori l); add (cori r)
@@ -32,13 +45,8 @@ let generate (codes: SimpleAsm.bytecmd list) : int list =
     | Int x      -> add 20; add (Types.code_of_interr x)
     | Cmp1 (x,r) -> add 50; add x;  add (cori r)
     | Cmp2 (l,r) -> add 51; add (cori l); add (cori r)
-    | JumpLess s -> begin
-        try
-          let target = SM.find s labels in
-          add 48; add target
-        with Not_found -> 
-          raise (BytecodeGenError (pos, sprintf "Label `%s` not found" s))
-    end
+    | JumpGre _ | JumpEq _
+    | JumpLess _ -> jumpHelper pos cmd
     | Label _ -> ()
   in
   List.iteri f codes;

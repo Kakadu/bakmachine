@@ -12,7 +12,7 @@ type bytecmd =
   | Cmp1 of int  * Types.regI        (* compare left operand with right *)
   | Cmp2 of Types.regI * Types.regI  (* puts -1/0/1 to EH if left is less/eq/more than right *)
   | Label of string 
-  | JumpLess of string 
+  | JumpLess of string | JumpGre of string | JumpEq of string
   | Int of Types.interrupt
 
 let print_bytecmd ch line = 
@@ -32,6 +32,8 @@ let print_bytecmd ch line =
       | Cmp2 (a,b) -> sprintf "cmp %s,%s" (sreg a) (sreg b)
       | Label s    -> sprintf "%s:" s
       | JumpLess s -> sprintf "jl %s" s
+      | JumpEq   s -> sprintf "je %s" s
+      | JumpGre  s -> sprintf "jg %s" s
   )
 
 let print_prog ch = List.iter (print_bytecmd ch)
@@ -39,5 +41,5 @@ let print_prog ch = List.iter (print_bytecmd ch)
 let lengther cmd = match cmd with
   | Sub1 _ 
   | Mov1 _ | Mov2 _ | Add1 _ | Add2 _ | Cmp1 _ | Cmp2 _ -> 3
-  | Mul1 _ | Int _  | JumpLess _ -> 2
+  | Mul1 _ | Int _  | JumpEq _ | JumpGre _ | JumpLess _ -> 2
   | Label _ -> 0
