@@ -14,6 +14,7 @@ type bytecmd =
   | Label of string 
   | JumpLess of string | JumpGre of string | JumpEq of string
   | Int of Types.interrupt
+  | Nop
 
 let print_bytecmd ch line = 
   let sreg x = string_of_sexp (Types.sexp_of_regI x) in
@@ -34,6 +35,7 @@ let print_bytecmd ch line =
       | JumpLess s -> sprintf "jl %s" s
       | JumpEq   s -> sprintf "je %s" s
       | JumpGre  s -> sprintf "jg %s" s
+      | Nop        -> "nop"
   )
 
 let print_prog ch = List.iter (print_bytecmd ch)
@@ -42,4 +44,5 @@ let lengther cmd = match cmd with
   | Sub1 _ 
   | Mov1 _ | Mov2 _ | Add1 _ | Add2 _ | Cmp1 _ | Cmp2 _ -> 3
   | Mul1 _ | Int _  | JumpEq _ | JumpGre _ | JumpLess _ -> 2
+  | Nop -> 1
   | Label _ -> 0

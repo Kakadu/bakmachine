@@ -47,6 +47,7 @@ let generate (codes: SimpleAsm.bytecmd list) : int list =
     | Cmp2 (l,r) -> add 51; add (cori l); add (cori r)
     | JumpGre _ | JumpEq _
     | JumpLess _ -> jumpHelper pos cmd
+    | Nop        -> add 19
     | Label _ -> ()
   in
   List.iteri f codes;

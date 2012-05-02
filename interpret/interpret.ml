@@ -16,6 +16,8 @@ let parse (ints: int list) =
   let ans = Array.create (List.length ints) None in
   let parse_loop_helper lst =
     match lst with 
+      | 19 :: tl -> (* NO oPeration *)
+          Some (Nop,tl)
       | 1 :: x :: r :: tl -> (* move integer to a register *)
           let r = wrap_reg r in
           Some (Mov2(x,r), tl)
